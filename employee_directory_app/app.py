@@ -20,6 +20,7 @@ compute_stack = ComputeStack(
     app,
     "ComputeStack",
     ec2_role=iam_stack.ec2_role,
+    photos_bucket=data_stack.photos_bucket,
     env=env
 )
 
