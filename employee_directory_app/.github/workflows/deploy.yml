@@ -1,0 +1,50 @@
+name: cdk-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      stacks:
+        description: "Stacks to deploy (--all or stack name)"
+        required: true
+        default: "--all"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CDK
+        run: npm i -g aws-cdk
+
+      - name: Install Python deps
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::593695448123:role/GitHubActionsCdkAssumeBootstrapRoles
+          aws-region: us-east-1
+
+      - name: Deploy
+        run: |
+          source .venv/bin/activate
+          cdk deploy ${{ inputs.stacks }} --require-approval never

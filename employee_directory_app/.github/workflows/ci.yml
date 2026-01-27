@@ -1,0 +1,65 @@
+name: cdk-ci
+
+on:
+  push:
+    branches:
+      - "feature/**"
+  pull_request:
+    branches:
+      - "master"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: cdk-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synth-and-diff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # útil si luego quieres mejorar diff/metadata
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install CDK CLI
+        run: npm i -g aws-cdk
+
+      - name: Install Python deps
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Configure AWS creds (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::593695448123:role/GitHubActionsCdkAssumeBootstrapRoles
+          aws-region: us-east-1
+
+      - name: CDK Synth
+        run: |
+          source .venv/bin/activate
+          cdk synth --quiet
+
+      - name: CDK Diff
+        run: |
+          source .venv/bin/activate
+          cdk diff --all
