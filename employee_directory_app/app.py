@@ -10,8 +10,8 @@ from employee_directory_app.stacks.compute_stack import ComputeStack
 app = cdk.App()
 
 env = cdk.Environment(
-    account=app.node.try_get_context("account"),
-    region=app.node.try_get_context("region"),
+    account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
+    region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1"),
 )
 
 iam_stack = IamStack(app, "IamStack", env=env)
