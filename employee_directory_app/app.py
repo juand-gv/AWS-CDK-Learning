@@ -3,26 +3,18 @@ import os
 
 import aws_cdk as cdk
 
-from employee_directory_app.employee_directory_app_stack import EmployeeDirectoryAppStack
+from employee_directory_app.stacks.iam_stack import IamStack
+from employee_directory_app.stacks.compute_stack import ComputeStack
 
 
 app = cdk.App()
-EmployeeDirectoryAppStack(app, "EmployeeDirectoryAppStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
 
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
+env = cdk.Environment(
+    account=app.node.try_get_context("account"),
+    region=app.node.try_get_context("region"),
+)
 
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+iam_stack = IamStack(app, "IamStack", env=env)
+ComputeStack(app, "ComputeStack", ec2_role=iam_stack.ec2_role, env=env)
 
 app.synth()
