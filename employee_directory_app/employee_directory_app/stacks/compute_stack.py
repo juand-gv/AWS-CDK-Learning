@@ -1,19 +1,22 @@
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_iam as iam
+import aws_cdk.aws_s3 as s3
+
 from aws_cdk import Stack, CfnParameter
 from constructs import Construct
 
 
 class ComputeStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, *, ec2_role: iam.IRole, **kwargs):
-        super().__init__(scope, construct_id, **kwargs)
-
-        photos_bucket_param = CfnParameter(
+    def __init__(
             self,
-            "PhotosBucketName",
-            type="String",
-            description="Name of S3 bucket for PHOTOS_BUCKET (i.e: my-photos-bucket)",
-        )
+            scope: Construct,
+            construct_id: str,
+            *,
+            ec2_role: iam.IRole,
+            photos_bucket: s3.IBucket,
+            **kwargs
+    ):
+        super().__init__(scope, construct_id, **kwargs)
 
         vpc = ec2.Vpc.from_lookup(
             self,
@@ -46,7 +49,7 @@ class ComputeStack(Stack):
             "cd FlaskApp",
             "pip3 install -r requirements.txt",
             "yum -y install stress",
-            f"echo 'PHOTOS_BUCKET={photos_bucket_param.value_as_string}' >> /etc/environment",
+            f"echo 'PHOTOS_BUCKET={photos_bucket.bucket_name}' >> /etc/environment",
             "echo 'AWS_DEFAULT_REGION=us-east-1' >> /etc/environment",
             "echo 'DYNAMO_MODE=on' >> /etc/environment",
             # systemd service to keep it alive
