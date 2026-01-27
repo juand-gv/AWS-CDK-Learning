@@ -28,7 +28,12 @@ class ComputeStack(Stack):
             description="Allow HTTP",
             allow_all_outbound=True,
         )
-        sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP")
+
+        sg.add_ingress_rule(
+            ec2.Peer.any_ipv4("179.12.97.81/32"),
+            ec2.Port.tcp(80),
+            "HTTP from my IP"
+        )
 
         user_data = ec2.UserData.for_linux()
         user_data.add_commands(
