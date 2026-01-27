@@ -9,7 +9,7 @@ from constructs import Construct
 class ComputeStack(Stack):
     def __init__(
             self,
-            cope: Construct,
+            scope: Construct,
             construct_id: str,
             *,
             ec2_role: iam.IRole,
