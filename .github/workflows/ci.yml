@@ -1,9 +1,6 @@
 name: cdk-ci
 
 on:
-  push:
-    branches:
-      - "feature/**"
   pull_request:
     branches:
       - "master"
@@ -31,7 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,6 +39,7 @@ jobs:
         run: npm i -g aws-cdk
 
       - name: Install Python deps
+        working-directory: employee_directory_app
         run: |
           python -m venv .venv
           source .venv/bin/activate
@@ -55,11 +52,13 @@ jobs:
           aws-region: us-east-1
 
       - name: CDK Synth
+        working-directory: employee_directory_app
         run: |
           source .venv/bin/activate
           cdk synth --quiet
 
       - name: CDK Diff
+        working-directory: employee_directory_app
         run: |
           source .venv/bin/activate
           cdk diff --all
