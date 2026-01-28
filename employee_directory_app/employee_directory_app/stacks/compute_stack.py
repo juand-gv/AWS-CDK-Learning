@@ -52,7 +52,11 @@ class ComputeStack(Stack):
             f"echo 'PHOTOS_BUCKET={photos_bucket.bucket_name}' >> /etc/environment",
             "echo 'AWS_DEFAULT_REGION=us-east-1' >> /etc/environment",
             "echo 'DYNAMO_MODE=on' >> /etc/environment",
-            # systemd service to keep it alive
+
+            # (opcional pero útil para debug)
+            "python3 -c \"import flask; print('Flask version:', flask.__version__)\"",
+
+            # systemd service to keep it alive (compatible)
             "cat > /etc/systemd/system/employee-flask.service << 'EOF'\n"
             "[Unit]\n"
             "Description=Employee Flask App\n"
@@ -61,16 +65,23 @@ class ComputeStack(Stack):
             "Type=simple\n"
             "WorkingDirectory=/home/ec2-user/FlaskApp\n"
             "EnvironmentFile=/etc/environment\n"
+            "Environment=FLASK_APP=application.py\n"
             "User=root\n"
-            "ExecStart=/usr/bin/python3 -m flask --app application.py run --host=0.0.0.0 --port=80\n"
+            "ExecStart=/usr/local/bin/flask run --host=0.0.0.0 --port=80\n"
             "Restart=always\n"
             "RestartSec=3\n\n"
             "[Install]\n"
             "WantedBy=multi-user.target\n"
             "EOF",
+
+            # Fallback: if /usr/local/bin/flask doesn't exist, use python -m flask
+            "if [ ! -x /usr/local/bin/flask ]; then "
+            "  sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/python3 -m flask run --host=0.0.0.0 --port=80|' /etc/systemd/system/employee-flask.service; "
+            "fi",
+
             "systemctl daemon-reload",
             "systemctl enable employee-flask",
-            "systemctl start employee-flask",
+            "systemctl restart employee-flask",
         )
 
         instance = ec2.Instance(
