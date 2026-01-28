@@ -33,9 +33,9 @@ class ComputeStack(Stack):
         )
 
         sg.add_ingress_rule(
-            ec2.Peer.ipv4("179.12.97.81/32"),
+            ec2.Peer.any_ipv4(),
             ec2.Port.tcp(80),
-            "HTTP from my IP"
+            "HTTP from anywhere"
         )
 
         user_data = ec2.UserData.for_linux()
