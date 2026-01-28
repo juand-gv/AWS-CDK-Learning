@@ -32,11 +32,10 @@ class ComputeStack(Stack):
             allow_all_outbound=True,
         )
 
-        # DEBUG: abierto a todo el mundo. Luego restringe a tu IP /32.
         sg.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
+            ec2.Peer.ipv4("179.12.97.81/32"),
             ec2.Port.tcp(80),
-            "HTTP from anywhere"
+            "HTTP from my ip"
         )
 
         user_data = ec2.UserData.for_linux()
