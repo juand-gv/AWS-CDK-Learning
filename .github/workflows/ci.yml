@@ -1,9 +1,28 @@
 name: cdk-ci
 
+#on:
+#  pull_request:
+#    branches:
+#      - "master"
+
 on:
-  pull_request:
-    branches:
-      - "master"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "CDK App to perform diff"
+        type: choice
+        required: true
+        options:
+          - employee_directory
+          - other (WIP)
+      region:
+        description: "Region on AWS"
+        type: choice
+        required: true
+        options:
+          - us-east-1
+          - us-west-2
+
 
 permissions:
   id-token: write
@@ -39,26 +58,18 @@ jobs:
         run: npm i -g aws-cdk
 
       - name: Install Python deps
-        working-directory: apps/employee_directory
+        working-directory: apps/${{ inputs.app }}
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
           pip install -r requirements.txt
 
       - name: Configure AWS creds (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::593695448123:role/GitHubActionsCdkAssumeBootstrapRoles
-          aws-region: us-east-1
-
-      - name: CDK Synth
-        working-directory: apps/employee_directory
-        run: |
-          source .venv/bin/activate
-          cdk synth --quiet
+          role-to-assume: ${{ secrets.CDK_CI_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
 
       - name: CDK Diff
-        working-directory: apps/employee_directory
+        working-directory: apps/${{ inputs.app }}
         run: |
           source .venv/bin/activate
           cdk diff --all

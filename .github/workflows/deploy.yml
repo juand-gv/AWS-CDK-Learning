@@ -3,6 +3,20 @@ name: cdk-deploy
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: "CDK App to perform diff"
+        type: choice
+        required: true
+        options:
+          - employee_directory
+          - other (WIP)
+      region:
+        description: "Region on AWS"
+        type: choice
+        required: true
+        options:
+          - us-east-1
+          - us-west-2
       stacks:
         description: "Stacks to deploy (--all or stack name)"
         required: true
@@ -33,7 +47,7 @@ jobs:
         run: npm i -g aws-cdk
 
       - name: Install Python deps
-        working-directory: apps/employee_directory
+        working-directory: apps/${{ inputs.app }}
         run: |
           python -m venv .venv
           source .venv/bin/activate
@@ -42,11 +56,11 @@ jobs:
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::593695448123:role/GitHubActionsCdkAssumeBootstrapRoles
-          aws-region: us-east-1
+          role-to-assume: ${{ secrets.CDK_CI_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
 
       - name: Deploy
-        working-directory: apps/employee_directory
+        working-directory: apps/${{ inputs.app }}
         run: |
           source .venv/bin/activate
           cdk deploy ${{ inputs.stacks }} --require-approval never
