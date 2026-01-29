@@ -1,0 +1,22 @@
+lambdas:
+  ec2_kill_switch:
+    function_name: employee-ec2-kill-switch
+    entry: employee_directory/src/lambdas/ec2_kill_switch
+    handler: handler.handler
+    runtime: python3.12
+    memory: 128
+    timeout: 60
+
+    # EventBridge schedule: always in UTC
+    # 10pm UTC-5 == 03:00 UTC
+    schedule_expression: "cron(0 3 * * ? *)"
+
+    environment:
+      NEVER_STOP_INSTANCE_IDS: ""
+
+    permissions:
+      actions:
+        - ec2:DescribeInstances
+        - ec2:StopInstances
+      resources:
+        - "*"
