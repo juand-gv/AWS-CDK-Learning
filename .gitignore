@@ -2,7 +2,7 @@
 package-lock.json
 __pycache__
 .pytest_cache
-employee_directory_app/.venv
+apps/employee_directory/employee_directory/.venv
 *.egg-info
 
 # CDK asset staging directory

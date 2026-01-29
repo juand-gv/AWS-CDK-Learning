@@ -33,7 +33,7 @@ jobs:
         run: npm i -g aws-cdk
 
       - name: Install Python deps
-        working-directory: employee_directory_app
+        working-directory: apps/employee_directory
         run: |
           python -m venv .venv
           source .venv/bin/activate
@@ -46,7 +46,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Deploy
-        working-directory: employee_directory_app
+        working-directory: apps/employee_directory
         run: |
           source .venv/bin/activate
           cdk deploy ${{ inputs.stacks }} --require-approval never
