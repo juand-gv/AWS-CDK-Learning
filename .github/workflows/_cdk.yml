@@ -1,0 +1,117 @@
+name: _cdk
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: "CDK app folder name under apps/ (e.g. employee_directory)"
+        required: true
+        type: string
+      account:
+        description: "AWS account id expected for this app (optional)"
+        required: false
+        type: string
+        default: ""
+      region:
+        description: "AWS region"
+        required: true
+        type: string
+      mode:
+        description: "diff | deploy"
+        required: true
+        type: string
+      stacks:
+        description: "Stacks to deploy (e.g. --all or StackName). Used only for deploy mode."
+        required: false
+        type: string
+        default: "--all"
+    secrets:
+      CDK_CI_ROLE_ARN:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: cdk-${{ inputs.mode }}-${{ github.ref }}-${{ inputs.app }}
+  cancel-in-progress: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/${{ inputs.app }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate app folder
+        shell: bash
+        run: |
+          test -f "cdk.json" || (echo "❌ apps/${{ inputs.app }}/cdk.json not found" && exit 1)
+          test -f "requirements.txt" || (echo "❌ apps/${{ inputs.app }}/requirements.txt not found" && exit 1)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: apps/${{ inputs.app }}/requirements.txt
+
+      - name: Install CDK CLI
+        run: npm i -g aws-cdk
+
+      - name: Install Python deps (venv per app)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure AWS creds (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.CDK_CI_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Validate AWS account (STS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          actual_account="$(aws sts get-caller-identity --query Account --output text)"
+          echo "STS caller account: $actual_account"
+
+          expected="${{ inputs.account }}"
+          if [ -n "${expected:-}" ]; then
+            if [ "$actual_account" != "$expected" ]; then
+              echo "❌ Account mismatch. Expected=$expected Actual=$actual_account"
+              exit 1
+            fi
+            echo "✅ Account matches expected: $expected"
+          else
+            echo "ℹ️ No expected account provided (inputs.account empty). Skipping strict check."
+          fi
+
+      - name: CDK Synth
+        run: |
+          cdk synth
+
+      - name: CDK Diff
+        if: inputs.mode == 'diff'
+        run: |
+          cdk diff --all
+
+      - name: CDK Deploy
+        if: inputs.mode == 'deploy'
+        run: |
+          cdk deploy ${{ inputs.stacks }} --require-approval never

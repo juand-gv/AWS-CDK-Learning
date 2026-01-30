@@ -4,14 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: "CDK App to perform diff"
-        type: choice
+        description: "CDK app folder under apps/ (e.g. employee_directory)"
         required: true
-        options:
-          - employee_directory
-          - other (WIP)
+        type: string
       region:
-        description: "Region on AWS"
+        description: "AWS region"
         type: choice
         required: true
         options:
@@ -21,6 +18,7 @@ on:
         description: "Stacks to deploy (--all or stack name)"
         required: true
         default: "--all"
+        type: string
 
 permissions:
   id-token: write
@@ -28,39 +26,11 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: master
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install CDK
-        run: npm i -g aws-cdk
-
-      - name: Install Python deps
-        working-directory: apps/${{ inputs.app }}
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
-
-      - name: Configure AWS (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.CDK_CI_ROLE_ARN }}
-          aws-region: ${{ inputs.region }}
-
-      - name: Deploy
-        working-directory: apps/${{ inputs.app }}
-        run: |
-          source .venv/bin/activate
-          cdk deploy ${{ inputs.stacks }} --require-approval never
+    uses: ./.github/workflows/_cdk.yml
+    with:
+      app: ${{ inputs.app }}
+      region: ${{ inputs.region }}
+      mode: deploy
+      stacks: ${{ inputs.stacks }}
+    secrets:
+      CDK_CI_ROLE_ARN: ${{ secrets.CDK_CI_ROLE_ARN }}

@@ -1,0 +1,4 @@
+app:
+  name: employee_directory
+  region: us-east-1
+  account: "593695448123"
