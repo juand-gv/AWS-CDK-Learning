@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: "CDK app folder under apps/ (e.g. employee_directory)"
+        description: "CDK app folder under apps/"
+        type: choice
         required: true
-        type: string
+        options:
+          - employee_directory
+          - others (WIP)
       region:
         description: "AWS region"
         type: choice

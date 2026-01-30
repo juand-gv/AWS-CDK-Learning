@@ -5,7 +5,7 @@ import aws_cdk as cdk
 
 from employee_directory.stacks.iam_stack import IamStack
 from employee_directory.stacks.compute_stack import ComputeStack
-from employee_directory.stacks.data_stack import DataStack
+from employee_directory.stacks.s3_stack import S3Stack
 from employee_directory.stacks.lambda_stack import LambdaStack
 
 app = cdk.App()
@@ -16,17 +16,11 @@ env = cdk.Environment(
 )
 
 iam_stack = IamStack(app, "IamStack", env=env)
-data_stack = DataStack(app, "DataStack", env=env)
-compute_stack = ComputeStack(
-    app,
-    "ComputeStack",
-    ec2_role=iam_stack.ec2_role,
-    photos_bucket=data_stack.photos_bucket,
-    env=env
-)
+s3_stack = S3Stack(app, "S3Stack", env=env)
+compute_stack = ComputeStack(app,"ComputeStack", env=env)
 lambda_stack = LambdaStack(app, "LambdaStack", env=env)
 
 compute_stack.add_dependency(iam_stack)
-compute_stack.add_dependency(data_stack)
+compute_stack.add_dependency(s3_stack)
 
 app.synth()

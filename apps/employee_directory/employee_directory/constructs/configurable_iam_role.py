@@ -5,6 +5,7 @@ from constructs import Construct
 
 from employee_directory.models.iam_config import RoleConfig
 
+from config.ssm_paths import safe_id
 
 class ConfigurableIamRole(Construct):
     def __init__(self, scope: Construct, construct_id: str, *, config: RoleConfig) -> None:
@@ -33,9 +34,11 @@ class ConfigurableIamRole(Construct):
                     )
                 )
 
+            sid = safe_id(p.name)
+
             iam.Policy(
                 self,
-                f"InlinePolicy-{p.name}",
+                f"InlinePolicy-{sid}",
                 policy_name=p.name,
                 statements=statements,
             ).attach_to_role(self.role)
