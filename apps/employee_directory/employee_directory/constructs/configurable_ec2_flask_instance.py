@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from aws_cdk import Aws
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
@@ -7,6 +8,10 @@ from constructs import Construct
 
 from employee_directory.models.compute_flask_config import FlaskEc2Config
 
+
+_APP_ZIP_URL = (
+    "https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip"
+)
 
 class ConfigurableEc2FlaskInstance(Construct):
     def __init__(
@@ -51,6 +56,7 @@ class ConfigurableEc2FlaskInstance(Construct):
             # App
             "cd /home/ec2-user",
             f"wget {cfg.app_zip_url}",
+            f"wget {_APP_ZIP_URL}",
             "unzip -o FlaskApp.zip",
             "cd FlaskApp",
 
@@ -69,6 +75,7 @@ class ConfigurableEc2FlaskInstance(Construct):
         user_data.add_commands(
             f"echo 'PHOTOS_BUCKET={photos_bucket.bucket_name}' >> /etc/environment",
             f"echo 'AWS_DEFAULT_REGION={cfg.aws_default_region}' >> /etc/environment",
+            f"echo 'AWS_DEFAULT_REGION={Aws.REGION}' >> /etc/environment",
             f"echo 'DYNAMO_MODE={cfg.dynamo_mode}' >> /etc/environment",
         )
 
