@@ -1,0 +1,19 @@
+flask_ec2:
+  # defaults for my learning journey
+  vpc_is_default: true
+
+  # security (only my ip)
+  allow_http_from: "179.12.97.81/32"
+  http_port: 80
+
+  # instance
+  instance_type: "t3.micro"
+  associate_public_ip: true
+
+  # app bootstrap (flask family)
+  app_zip_url: "https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip"
+  install_debug_tools: true
+
+  # runtime env
+  aws_default_region: "us-east-1"
+  dynamo_mode: "on"
