@@ -35,14 +35,14 @@ class LambdaStack(Stack):
 
             ssm.StringParameter(
                 self,
-                f"SSM_{sid}FunctionArn",
+                f"SSM_{sid}_FunctionArn",
                 parameter_name=f"{base}/function_arn",
                 string_value=c.function.function_arn,
             )
 
             ssm.StringParameter(
                 self,
-                f"SSM_{sid}FunctionName",
+                f"SSM_{sid}_FunctionName",
                 parameter_name=f"{base}/function_name",
                 string_value=c.function.function_name,
             )
