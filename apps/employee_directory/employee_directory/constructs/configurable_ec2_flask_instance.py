@@ -55,7 +55,6 @@ class ConfigurableEc2FlaskInstance(Construct):
 
             # App
             "cd /home/ec2-user",
-            f"wget {cfg.app_zip_url}",
             f"wget {_APP_ZIP_URL}",
             "unzip -o FlaskApp.zip",
             "cd FlaskApp",
@@ -74,7 +73,6 @@ class ConfigurableEc2FlaskInstance(Construct):
         # Env vars
         user_data.add_commands(
             f"echo 'PHOTOS_BUCKET={photos_bucket.bucket_name}' >> /etc/environment",
-            f"echo 'AWS_DEFAULT_REGION={cfg.aws_default_region}' >> /etc/environment",
             f"echo 'AWS_DEFAULT_REGION={Aws.REGION}' >> /etc/environment",
             f"echo 'DYNAMO_MODE={cfg.dynamo_mode}' >> /etc/environment",
         )

@@ -13,10 +13,8 @@ class FlaskEc2Config(BaseModel):
     instance_type: str = "t3.micro"
     associate_public_ip: bool = True
 
-    app_zip_url: str
     install_debug_tools: bool = True
 
-    aws_default_region: str = "us-east-1"
     dynamo_mode: str = "on"
 
 
