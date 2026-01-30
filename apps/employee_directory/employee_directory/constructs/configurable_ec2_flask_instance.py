@@ -101,6 +101,10 @@ class ConfigurableEc2FlaskInstance(Construct):
             "systemctl --no-pager -l status employee-flask || true",
         )
 
+        subnet_selection = None
+        if cfg.associate_public_ip:
+            subnet_selection = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
+
         self.instance = ec2.Instance(
             self,
             cfg.instance_id,
@@ -111,4 +115,5 @@ class ConfigurableEc2FlaskInstance(Construct):
             role=ec2_role,
             user_data=user_data,
             associate_public_ip_address=cfg.associate_public_ip,
+            vpc_subnets=subnet_selection
         )
