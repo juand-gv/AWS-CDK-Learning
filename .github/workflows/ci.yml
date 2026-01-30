@@ -2,8 +2,7 @@ name: cdk-ci
 
 on:
   pull_request:
-    branches:
-      - "master"
+    branches: ["master"]
 
 permissions:
   id-token: write
@@ -15,50 +14,108 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  synth-and-diff:
+  detect-apps:
     runs-on: ubuntu-latest
-
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_apps: ${{ steps.set-matrix.outputs.has_apps }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # útil si luego quieres mejorar diff/metadata
+          fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install CDK CLI
-        run: npm i -g aws-cdk
-
-      - name: Install Python deps
-        working-directory: apps/employee_directory
+      - name: Build app matrix from changed files
+        id: set-matrix
+        shell: bash
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
+          set -euo pipefail
 
-      - name: Configure AWS creds (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::593695448123:role/GitHubActionsCdkAssumeBootstrapRoles
-          aws-region: us-east-1
+          BASE_REF="${{ github.base_ref }}"
+          echo "Base ref: $BASE_REF"
+          
+          git fetch origin "$BASE_REF":"origin/$BASE_REF" --depth=1 || true
+          
+          CHANGED="$(git diff --name-only "origin/$BASE_REF"...HEAD)"
+          echo "Changed files:"
+          echo "$CHANGED"
+          
+          if echo "$CHANGED" | grep -Eq '(^\.github/|^shared/|^libs/|^cdk\.json$|^package\.json$|^pyproject\.toml$)'; then
+            echo "Detected global change → run ALL apps with cdk.json"
+            APPS=$(ls -1 apps/*/cdk.json 2>/dev/null | awk -F/ '{print $2}' | sort -u)
+          else
+            APPS=$(echo "$CHANGED" | grep -E '^apps/[^/]+/' | awk -F/ '{print $2}' | sort -u || true)
+          fi
+          
+          if [ -z "${APPS:-}" ]; then
+            echo "No apps changed."
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            echo "has_apps=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "Apps to run:"
+          echo "$APPS"
+          
+          # Build JSON matrix with region per app (from config/app.yaml). Fallback us-east-1.
+          JSON='{"include":['
+          first=1
+          
+          for a in $APPS; do
+            cfg="apps/$a/config/app.yaml"
+          
+            region="us-east-1"
+            account=""
+            
+            if [ -f "$cfg" ]; then
+              found_region="$(grep -E '^[[:space:]]*region:[[:space:]]*' "$cfg" | head -n 1 | sed -E 's/^[[:space:]]*region:[[:space:]]*//; s/[[:space:]]*$//')"
+              if [ -n "${found_region:-}" ]; then
+                region="$found_region"
+                # strip double quotes
+                region="${region%\"}"
+                region="${region#\"}"
+                # (optional) strip single quotes
+                region="${region%\'}"
+                region="${region#\'}"
+              fi
+            
+              found_acc="$(grep -E '^[[:space:]]*account:[[:space:]]*' "$cfg" | head -n 1 | sed -E 's/^[[:space:]]*account:[[:space:]]*//; s/[[:space:]]*$//')"
+              if [ -n "${found_acc:-}" ]; then
+                account="$found_acc"
+                # strip double quotes
+                account="${account%\"}"
+                account="${account#\"}"
+                # (optional) strip single quotes
+                account="${account%\'}"
+                account="${account#\'}"
+              fi
+            else
+              echo "⚠️ $cfg not found for app=$a. Using default region=$region and empty account"
+            fi
+          
+            if [ $first -eq 1 ]; then
+              first=0
+            else
+              JSON+=','
+            fi
+            JSON+='{"app":"'"$a"'","region":"'"$region"'","account":"'"$account"'"}'
+          done
+          
+          JSON+=']}'
+          
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+          echo "has_apps=true" >> "$GITHUB_OUTPUT"
 
-      - name: CDK Synth
-        working-directory: apps/employee_directory
-        run: |
-          source .venv/bin/activate
-          cdk synth --quiet
-
-      - name: CDK Diff
-        working-directory: apps/employee_directory
-        run: |
-          source .venv/bin/activate
-          cdk diff --all
+  diff:
+    needs: detect-apps
+    if: needs.detect-apps.outputs.has_apps == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-apps.outputs.matrix) }}
+    uses: ./.github/workflows/_cdk.yml
+    with:
+      app: ${{ matrix.app }}
+      region: ${{ matrix.region }}
+      account: ${{ matrix.account }}
+      mode: diff
+    secrets:
+      CDK_CI_ROLE_ARN: ${{ secrets.CDK_CI_ROLE_ARN }}
