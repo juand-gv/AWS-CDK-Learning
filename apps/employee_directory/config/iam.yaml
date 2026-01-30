@@ -1,0 +1,21 @@
+roles:
+  - id: employee_web_ec2_role
+    role_name: EmployeeWebEc2Role
+    assumed_by:
+      service: ec2.amazonaws.com
+
+    managed_policies:
+      - AmazonS3FullAccess
+      - AmazonDynamoDBFullAccess
+      - AmazonSSMManagedInstanceCore
+
+    # optional (plan to migrate to least-privilege )
+    inline_policies: []
+
+    # - name: allow_read_specific_bucket
+    #   statements:
+    #     - effect: Allow
+    #       actions: ["s3:GetObject", "s3:ListBucket"]
+    #       resources:
+    #         - "arn:aws:s3:::my-bucket"
+    #         - "arn:aws:s3:::my-bucket/*"
