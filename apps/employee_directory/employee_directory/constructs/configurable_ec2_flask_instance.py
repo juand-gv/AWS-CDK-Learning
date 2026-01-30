@@ -6,7 +6,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
-from employee_directory.models.compute_flask_config import FlaskEc2Config
+from employee_directory.models.compute_flask_config import FlaskEc2Config, FlaskEc2InstanceConfig
 
 
 _APP_ZIP_URL = (
@@ -19,7 +19,8 @@ class ConfigurableEc2FlaskInstance(Construct):
         scope: Construct,
         construct_id: str,
         *,
-        cfg: FlaskEc2Config,
+        family_cfg: FlaskEc2Config,
+        cfg: FlaskEc2InstanceConfig,
         ec2_role: iam.IRole,
         photos_bucket: s3.IBucket,
     ) -> None:
@@ -28,12 +29,12 @@ class ConfigurableEc2FlaskInstance(Construct):
         vpc = ec2.Vpc.from_lookup(
             self,
             "DefaultVpc",
-            is_default=cfg.vpc_is_default,
+            is_default=family_cfg.vpc_is_default,
         )
 
         sg = ec2.SecurityGroup(
             self,
-            "EmployeeWebSg",
+            cfg.sg_id,
             vpc=vpc,
             description="Allow HTTP",
             allow_all_outbound=True,
@@ -102,7 +103,7 @@ class ConfigurableEc2FlaskInstance(Construct):
 
         self.instance = ec2.Instance(
             self,
-            "EmployeeWebInstance",
+            cfg.instance_id,
             vpc=vpc,
             security_group=sg,
             instance_type=ec2.InstanceType(cfg.instance_type),

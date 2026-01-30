@@ -25,11 +25,14 @@ class ComputeStack(Stack):
 
         project_root = str(Path(__file__).resolve().parents[2])
         root_cfg = load_flask_ec2_config(project_root)
+        family_cfg = root_cfg.flask_ec2
 
-        ConfigurableEc2FlaskInstance(
-            self,
-            "FlaskEc2",
-            cfg=root_cfg.flask_ec2,
-            ec2_role=ec2_role,
-            photos_bucket=photos_bucket,
-        )
+        for icfg in family_cfg.instances:
+            ConfigurableEc2FlaskInstance(
+                self,
+                f"FlaskEc2-{icfg.name}",
+                family_cfg=family_cfg,
+                cfg=icfg,
+                ec2_role=ec2_role,
+                photos_bucket=photos_bucket,
+            )
