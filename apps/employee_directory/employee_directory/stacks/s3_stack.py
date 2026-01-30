@@ -11,7 +11,7 @@ from config.ssm_paths import app_prefix, safe_id
 from employee_directory.constructs.configurable_s3 import ConfigurableS3Bucket
 
 
-class StorageStack(Stack):
+class S3Stack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
 
