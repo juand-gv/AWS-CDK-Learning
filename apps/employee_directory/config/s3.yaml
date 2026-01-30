@@ -1,0 +1,5 @@
+buckets:
+  - id: photos
+    bucket_name: null
+    removal_policy: destroy
+    auto_delete_objects: true

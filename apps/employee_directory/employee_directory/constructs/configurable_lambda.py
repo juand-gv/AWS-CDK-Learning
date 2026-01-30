@@ -7,6 +7,8 @@ from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as targets
 from constructs import Construct
 
+from typing import Optional
+
 from employee_directory.models.lambda_config import LambdaFunctionConfig
 
 
@@ -43,12 +45,13 @@ class ConfigurableLambda(Construct):
             )
 
         # Optional: Scheduler
+        self.rule: Optional[events.Rule] = None
         if cfg.schedule_expression:
-            rule = events.Rule(
+            self.rule = events.Rule(
                 self,
                 "ScheduleRule",
                 schedule=events.Schedule.expression(cfg.schedule_expression),
             )
-            rule.add_target(targets.LambdaFunction(fn))
+            self.rule.add_target(targets.LambdaFunction(fn))
 
         self.function = fn

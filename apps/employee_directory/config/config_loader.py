@@ -8,6 +8,7 @@ import yaml
 from employee_directory.models.lambda_config import LambdasConfig
 from employee_directory.models.compute_flask_config import RootFlaskEc2Config
 from employee_directory.models.iam_config import IamConfig
+from employee_directory.models.s3_config import S3Config
 
 T = TypeVar("T")
 
@@ -82,3 +83,18 @@ def load_iam_config(project_root: str, rel_path: str = "config/iam.yaml") -> Iam
         rel_path=rel_path,
         validator=IamConfig.model_validate,
     )
+
+
+# -------------------------
+# S3
+# -------------------------
+def load_s3_config(project_root: str, rel_path: str = "config/s3.yaml") -> S3Config:
+    root = Path(project_root)
+    path = root / rel_path
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+
+    with path.open("r", encoding="utf-8") as f:
+        raw = yaml.safe_load(f) or {}
+
+    return S3Config.model_validate(raw)

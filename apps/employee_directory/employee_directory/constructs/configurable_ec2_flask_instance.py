@@ -8,6 +8,7 @@ from constructs import Construct
 
 from employee_directory.models.compute_flask_config import FlaskEc2Config, FlaskEc2InstanceConfig
 
+from config.ssm_paths import safe_id
 
 _APP_ZIP_URL = (
     "https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip"
@@ -34,11 +35,13 @@ class ConfigurableEc2FlaskInstance(Construct):
 
         sg = ec2.SecurityGroup(
             self,
-            cfg.sg_id,
+            safe_id(cfg.sg_id),
             vpc=vpc,
             description="Allow HTTP",
             allow_all_outbound=True,
         )
+
+        self.security_group = sg
 
         sg.add_ingress_rule(
             ec2.Peer.ipv4(cfg.allow_http_from),
@@ -107,7 +110,7 @@ class ConfigurableEc2FlaskInstance(Construct):
 
         self.instance = ec2.Instance(
             self,
-            cfg.instance_id,
+            safe_id(cfg.instance_id),
             vpc=vpc,
             security_group=sg,
             instance_type=ec2.InstanceType(cfg.instance_type),
