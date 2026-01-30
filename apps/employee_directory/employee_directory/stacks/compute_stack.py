@@ -68,13 +68,6 @@ class ComputeStack(Stack):
 
             ssm.StringParameter(
                 self,
-                f"SSM_{sid}_InstanceArn",
-                parameter_name=f"{base}/instance_arn",
-                string_value=instance.instance_arn,
-            )
-
-            ssm.StringParameter(
-                self,
                 f"SSM_{sid}_SecurityGroupId",
                 parameter_name=f"{base}/security_group_id",
                 string_value=sg.security_group_id,
