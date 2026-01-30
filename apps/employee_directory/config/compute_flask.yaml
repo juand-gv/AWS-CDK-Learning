@@ -1,0 +1,16 @@
+flask_ec2:
+  vpc_is_default: true
+
+  instances:
+    - name: employee-web
+      sg_id: EmployeeWebSg
+      instance_id: EmployeeWebInstance
+
+      allow_http_from: "179.12.97.81/32"
+      http_port: 80
+
+      instance_type: "t3.micro"
+      associate_public_ip: true
+
+      install_debug_tools: true
+      dynamo_mode: "on"
