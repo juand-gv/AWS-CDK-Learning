@@ -4,6 +4,9 @@ This is a **config-driven AWS CDK application** written in Python, used as a ser
 
 The goal of this app is not only to deploy resources, but to model **how real teams structure, validate, and evolve infrastructure** using CDK.
 
+Currently following [AWS Cloud Technical Essentials](https://www.coursera.org/learn/aws-cloud-technical-essentials?specialization=aws-cloud-solutions-architect). 
+Although they are using AWS console and I'm using CDK. 
+
 ---
 
 ## 🎯 Goals
